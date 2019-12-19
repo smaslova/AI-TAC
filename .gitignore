@@ -130,10 +130,12 @@ dmypy.json
 
 #directories
 data/
+human_data/
 outputs/
 
 #bash scripts
 *.sh
+*.out
 
 #saved models
 *.ckpt

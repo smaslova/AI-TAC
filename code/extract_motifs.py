@@ -6,7 +6,7 @@ import os
 import sys
 matplotlib.use('Agg')
 
-import cnn_model
+import aitac
 import plot_utils
 
 import time
@@ -18,6 +18,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # Hyper parameters
 num_classes = 81
 batch_size = 100
+num_filters = 300
 
 #create output figure directory
 model_name = sys.argv[1]
@@ -38,16 +39,16 @@ dataset = torch.utils.data.TensorDataset(torch.from_numpy(x), torch.from_numpy(y
 data_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
 
 # load trained model
-model = cnn_model.ConvNet(num_classes).to(device)
-checkpoint = torch.load('../models/model' + model_name + '.ckpt')
+model = aitac.ConvNet(num_classes, num_filters).to(device)
+checkpoint = torch.load('../models/' + model_name + '.ckpt')
 model.load_state_dict(checkpoint)
 
 #copy trained model weights to motif extraction model
-motif_model = cnn_model.motifCNN(model).to(device)
+motif_model = aitac.motifCNN(model).to(device)
 motif_model.load_state_dict(model.state_dict())
 
 # run predictions with full model on all data
-pred_full_model, max_activations, activation_idx = cnn_model.test_model(data_loader, model, device)
+pred_full_model, max_activations, activation_idx = aitac.test_model(data_loader, model, device)
 correlations = plot_utils.plot_cors(y, pred_full_model, output_file_path)
 
 
@@ -68,7 +69,7 @@ correlations2 = plot_utils.plot_cors(y2, pred_full_model2, output_file_path)
 
 # get first layer activations and predictions with leave-one-filter-out
 start = time.time()
-activations, predictions = cnn_model.get_motifs(data_loader, motif_model, device)
+activations, predictions = aitac.get_motifs(data_loader, motif_model, device)
 print(time.time()- start)
 
 filt_corr, filt_infl, ave_filt_infl = plot_utils.plot_filt_corr(predictions, y2, correlations2, output_file_path)

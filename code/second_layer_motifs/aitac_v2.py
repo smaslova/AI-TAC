@@ -8,14 +8,14 @@ import copy
 
 # Convolutional neural network
 class ConvNet(nn.Module):
-    def __init__(self, num_classes, num_filters):
+    def __init__(self, num_classes):
         super(ConvNet, self).__init__()
         
         # for layer one, separate convolution and relu step from maxpool and batch normalization
         # to extract convolutional filters
         self.layer1_conv = nn.Sequential(
             nn.Conv2d(in_channels=1,
-                      out_channels=num_filters,
+                      out_channels=300,
                       kernel_size=(4, 19),
                       stride=1,
                       padding=0),  # padding is done in forward method along 1 dimension only
@@ -23,15 +23,17 @@ class ConvNet(nn.Module):
 
         self.layer1_process = nn.Sequential(
             nn.MaxPool2d(kernel_size=(1,3), stride=(1,3), padding=(0,1)),
-            nn.BatchNorm2d(num_filters))
+            nn.BatchNorm2d(300))
 
         self.layer2 = nn.Sequential(
-            nn.Conv2d(in_channels=num_filters,
+            nn.Conv2d(in_channels=300,
                       out_channels=200,
                       kernel_size=(1, 11),
                       stride=1,
                       padding=0),  # padding is done in forward method along 1 dimension only
-            nn.ReLU(),
+            nn.ReLU())
+
+        self.layer2_process = nn.Sequential(
             nn.MaxPool2d(kernel_size=(1,4), stride=(1,4), padding=(0,1)),
             nn.BatchNorm2d(200))
 
@@ -76,6 +78,8 @@ class ConvNet(nn.Module):
         
         out = F.pad(out, (5, 5), mode='constant', value=0)
         out = self.layer2(out)
+        activations2 = torch.squeeze(out)
+        out = self.layer2_process(out)
 
         out = F.pad(out, (3, 3), mode='constant', value=0)
         out = self.layer3(out)
@@ -90,7 +94,7 @@ class ConvNet(nn.Module):
         
         activations, act_index = torch.max(activations, dim=2)
         
-        return predictions, activations, act_index
+        return predictions, activations, activations2, act_index
       
 # define model for extracting motifs from first convolutional layer
 # and determining importance of each filter on prediction
@@ -100,14 +104,15 @@ class motifCNN(nn.Module):
                 self.layer1_conv = nn.Sequential(*list(original_model.children())[0])
                 self.layer1_process = nn.Sequential(*list(original_model.children())[1])
                 self.layer2 = nn.Sequential(*list(original_model.children())[2])
-                self.layer3 = nn.Sequential(*list(original_model.children())[3])
+                self.layer2_process = nn.Sequential(*list(original_model.children())[3])
+                self.layer3 = nn.Sequential(*list(original_model.children())[4])
                 
-                self.layer4 = nn.Sequential(*list(original_model.children())[4])
-                self.layer5 = nn.Sequential(*list(original_model.children())[5])
-                self.layer6 = nn.Sequential(*list(original_model.children())[6])
+                self.layer4 = nn.Sequential(*list(original_model.children())[5])
+                self.layer5 = nn.Sequential(*list(original_model.children())[6])
+                self.layer6 = nn.Sequential(*list(original_model.children())[7])
                 
 
-            def forward(self, input, num_filters):
+            def forward(self, input):
                 # add dummy dimension to input (for num channels=1)
                 input = torch.unsqueeze(input, 1)
                 
@@ -125,22 +130,22 @@ class motifCNN(nn.Module):
             
                 # run all other layers with 1 filter left out at a time
                 batch_size = layer1_out.shape[0]
-                predictions = torch.zeros(batch_size, num_filters,  81)
+                predictions = torch.zeros(batch_size, 300,  81)
 
+                #filter_matches = np.load("../outputs/motifs2/run2_motif_matches.npy")
 
-                for i in range(num_filters):
+                for i in range(300):
                     #modify filter i of first layer output
                     filter_input = layer1_out.clone()
 
                     filter_input[:,i,:,:] = filter_input.new_full((batch_size, 1, 94), fill_value=filter_means_batch[i])
-
+                    
                     out = self.layer2(filter_input)
                     out = F.pad(out, (3, 3), mode='constant', value=0)
                     out = self.layer3(out)
                     
                     # Flatten output of convolutional layers
                     out = out.view(out.size()[0], -1)
-                    
                     # run fully connected layers
                     out = self.layer4(out)
                     out = self.layer5(out)
@@ -161,10 +166,10 @@ def pearson_loss(x,y):
     
         cos = nn.CosineSimilarity(dim=1, eps=1e-6)
         loss = torch.sum(1-cos(xm,ym))
-        return loss 
+        return loss   
+    
 
-
-def train_model(train_loader, test_loader, model, device, criterion, optimizer, num_epochs, output_directory):
+def train_model(train_loader, test_loader, model, device, criterion, alpha, optimizer, num_epochs, output_directory):
     total_step = len(train_loader)
     model.train()
 
@@ -183,8 +188,8 @@ def train_model(train_loader, test_loader, model, device, criterion, optimizer, 
             labels = labels.to(device)
 
             # Forward pass
-            outputs, act, idx = model(seqs)
-            loss = criterion(outputs, labels) # change input to 
+            outputs, act, act2, idx = model(seqs)
+            loss = criterion(outputs, labels, alpha) # change input to 
             running_loss += loss.item()
         
             # Backward and optimize
@@ -192,9 +197,9 @@ def train_model(train_loader, test_loader, model, device, criterion, optimizer, 
             loss.backward()
             optimizer.step()
 
-            if (i+1) % 100 == 0:
-                print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
-                       .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
+            #if (i+1) % 100 == 0:
+            #    print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
+            #           .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
 
         #save training loss to file
         epoch_loss = running_loss / len(train_loader.dataset)
@@ -208,7 +213,7 @@ def train_model(train_loader, test_loader, model, device, criterion, optimizer, 
                 x = seqs.to(device)
                 y = labels.to(device)
                 outputs, act, idx = model(x)
-                loss = criterion(outputs, y)
+                loss = criterion(outputs, y, alpha)
                 test_loss += loss.item() 
 
         test_loss = test_loss / len(test_loader.dataset)
@@ -227,41 +232,42 @@ def train_model(train_loader, test_loader, model, device, criterion, optimizer, 
     train_error.close()
     test_error.close()
 
-    model.load_state_dict(best_model_wts)
+    #model.load_state_dict(best_model_wts)
     return model, best_loss_valid
     
 
 def test_model(test_loader, model, device):
-    num_filters=model.layer1_conv[0].out_channels
     predictions = torch.zeros(0, 81)
-    max_activations = torch.zeros(0, num_filters)
-    act_index = torch.zeros(0, num_filters)
+    max_activations = torch.zeros(0, 300) 
+    activations2 = torch.zeros(0,200,84)
+    act_index = torch.zeros(0, 300)
 
     with torch.no_grad():
         model.eval()
         for seqs, labels in test_loader:
             seqs = seqs.to(device)
-            pred, act, idx = model(seqs)
+            pred, act, act2, idx = model(seqs)
             predictions = torch.cat((predictions, pred.type(torch.FloatTensor)), 0)
             max_activations = torch.cat((max_activations, act.type(torch.FloatTensor)), 0)
+            activations2 = torch.cat((activations2, act2.type(torch.FloatTensor)), 0)
             act_index = torch.cat((act_index, idx.type(torch.FloatTensor)), 0)
 
     predictions = predictions.numpy()
     max_activations = max_activations.numpy()
+    activations2 = activations2.numpy()
     act_index = act_index.numpy()
-    return predictions, max_activations, act_index
+    return predictions, max_activations, activations2, act_index
 
 
 
 def get_motifs(data_loader, model, device):
-    num_filters=model.layer1_conv[0].out_channels
-    activations = torch.zeros(0, num_filters, 251)
-    predictions = torch.zeros(0, num_filters, 81)
+    activations = torch.zeros(0, 300, 251)
+    predictions = torch.zeros(0, 300, 81)
     with torch.no_grad():
         model.eval()
         for seqs, labels in data_loader:
             seqs = seqs.to(device)
-            pred, act, idx = model(seqs, num_filters)
+            pred, act = model(seqs)
             
             activations = torch.cat((activations, act.type(torch.FloatTensor)), 0)
             predictions = torch.cat((predictions, pred.type(torch.FloatTensor)), 0)

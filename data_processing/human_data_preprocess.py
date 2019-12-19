@@ -6,29 +6,24 @@ import _pickle as pickle
 import preprocess_utils
 
 #parameters
-num_chr = 20
+num_chr = 23
 
 #input files:
-data_file = sys.argv[1] #bed file with peak locations
-intensity_file = sys.argv[2] #text file with normalized peak heights
-reference_genome = sys.argv[3] #directory with reference genome fasta files 
-output_directory = sys.argv[4] #output directory
-
-directory = os.path.dirname(output_directory)
-if not os.path.exists(directory):
-    os.makedirs(directory)
-
+data_file = sys.argv[1] #path to bed file with human data
+intensity_file = sys.argv[2] #path to file with normalized ATAC-Seq data
+reference_genome = sys.argv[3] #path to reference genome fasta files "../human_data/hg19/"
+output_directory = "../human_data/"
 
 
 # read bed file with peak positions, and keep only entries with valid activity vectors
 positions = preprocess_utils.read_bed(data_file)
 
 # read reference genome fasta file into dictionary
-if not os.path.exists('../data/chr_dict.pickle'):
+if not os.path.exists('../human_data/hg19_chr_chr_dict.pickle'):
     chr_dict = preprocess_utils.read_fasta(reference_genome, num_chr)
-    pickle.dump(chr_dict, open('../data/chr_dict.pickle', "wb"))
+    pickle.dump(chr_dict, open("../human_data/hg19_chr_dict.pickle", "wb"))
 
-chr_dict = pickle.load(open('../data/chr_dict.pickle', "rb"))
+chr_dict = pickle.load(open("../human_data/hg19_chr_dict.pickle", "rb"))
 
 
 one_hot_seqs, peak_seqs, invalid_ids, peak_names = preprocess_utils.get_sequences(positions, chr_dict, num_chr)
@@ -56,7 +51,6 @@ if np.sum(peak_names != peak_names2) > 0:
     print("Order of peaks not matching for sequences/intensities!")
 
 
-
 # write to file
 np.save(output_directory + 'one_hot_seqs.npy', one_hot_seqs)
 np.save(output_directory + 'peak_names.npy', peak_names)
@@ -64,14 +58,5 @@ np.save(output_directory + 'peak_seqs.npy', peak_seqs)
 
 with open(output_directory + 'invalid_ids.txt', 'w') as f:
     f.write(json.dumps(invalid_ids))
-f.close()
-
-#write fasta file
-with open(output_directory + 'sequences.fasta', 'w') as f:
-    for i in range(peak_seqs.shape[0]):
-        f.write('>' + peak_names[i] + '\n')
-        f.write (peak_seqs[i] + '\n')
-f.close()
-
 
 np.save(output_directory + 'cell_type_array.npy', cell_type_array)
