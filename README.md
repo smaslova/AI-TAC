@@ -1,6 +1,8 @@
 # AI-TAC
 AI-TAC is a deep convoluional network for predicting mouse immune cell ATAC-seq signal from peak sequences using data from the Immunological Genome Project:  http://www.immgen.org/.
 
+![Overview of AI-TAC](https://smaslova.github.com/figures/AITAC.pdf)
+
 
 ## Requirements
 The code was written in python v3.6.3 and pytorch v0.4.0, and run on NVIDIA P100 Pascal GPUs.
