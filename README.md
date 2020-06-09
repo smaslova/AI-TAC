@@ -24,3 +24,5 @@ To extract first layer motifs run:
 ```python
 python -u extract_motifs.py model_name '../data/one_hot_seqs.npy' '../data/cell_type_array.npy' '../data/peak_names.npy'
 ```
+## Reference
+[Learning immune cell differentiation. Alexandra Maslova, Ricardo N. Ramirez, Ke Ma, Hugo Schmutz, Chendi Wang, Curtis Fox, Bernard Ng, Christophe Benoist, Sara Mostafavi, the Immunological Genome Project, bioRxiv 2019.12.21.885814; doi: https://doi.org/10.1101/2019.12.21.885814](https://www.biorxiv.org/content/10.1101/2019.12.21.885814v1)
