@@ -2,7 +2,7 @@
 # Convolutional neural network to predict immune cell chromatin state
 AI-TAC is a deep convoluional network for predicting mouse immune cell ATAC-seq signal from peak sequences using data from the Immunological Genome Project:  http://www.immgen.org/.
 
-![Overview of AI-TAC](https://github.com/smaslova/AI-TAC/blob/master/figures/AI-TAC.png)
+![Overview of AI-TAC](figures/AI-TAC.png)
 
 
 ## Requirements
