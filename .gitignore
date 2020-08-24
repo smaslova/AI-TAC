@@ -136,7 +136,3 @@ outputs/
 #bash scripts
 *.sh
 *.out
-
-#saved models
-*.ckpt
-*.pth
