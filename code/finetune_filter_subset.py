@@ -18,7 +18,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 num_epochs = 10
 num_classes = 81
 batch_size = 100
-learning_rate = 0.001
+learning_rate = 0.0001
 num_filters = 99
 
 #create output figure directory
@@ -73,7 +73,6 @@ checkpoint = torch.load("../models/" + original_model + ".ckpt")
 #indices of filters in original model
 filters = np.loadtxt('../data/filter_set99_index.txt')
 
-
 #load new weights into model
 checkpoint2 = model.state_dict()
 
@@ -81,12 +80,26 @@ checkpoint2 = model.state_dict()
 for i, (layer_name, layer_weights) in enumerate(checkpoint.items()):
 
     # for all first layer weights take subset
-    if i<2:
+    if i<6:
         subset_weights = layer_weights[filters, ...]
         checkpoint2[layer_name] = subset_weights
+    elif i==6: 
+        subset_weights = layer_weights[:,filters, ...]
+        checkpoint2[layer_name] = subset_weights
 
-#load weights into new model
+    #for remainder of layers take all weights
+    else:
+        checkpoint2[layer_name] = layer_weights
+
 model.load_state_dict(checkpoint2)
+
+#freeze first layer
+def freeze_layer(layer):
+ for param in layer.parameters():
+  param.requires_grad = False
+
+freeze_layer(model.layer1_conv)
+
 
 # Loss and optimizer
 criterion = aitac.pearson_loss

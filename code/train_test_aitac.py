@@ -5,6 +5,7 @@ import torch.utils.data
 import matplotlib
 import os
 import sys
+import pathlib
 matplotlib.use('Agg')
 
 import aitac
@@ -27,9 +28,10 @@ output_file_path = "../outputs/" + model_name + "/training/"
 directory = os.path.dirname(output_file_path)
 if not os.path.exists(directory):
     print("Creating directory %s" % output_file_path)
-    os.makedirs(directory)
+    pathlib.Path(output_file_path).mkdir(parents=True, exist_ok=True) 
 else:
      print("Directory %s exists" % output_file_path)
+
 
 
 # Load all data
@@ -62,6 +64,14 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 model, best_loss = aitac.train_model(train_loader, eval_loader, model, device, criterion,  optimizer, num_epochs, output_file_path)
 
 # save the model checkpoint
+models_file_path = "../models/"
+models_directory = os.path.dirname(models_file_path)
+if not os.path.exists(models_directory):
+    print("Creating directory %s" % models_file_path)
+    os.makedirs(models_directory)
+else:
+     print("Directory %s exists" % models_file_path)
+
 torch.save(model.state_dict(), '../models/' + model_name + '.ckpt')
 
 #save the whole model
