@@ -1,0 +1,7 @@
+This folder contains examples of the data files that serve as input into the AI-TAC model.
+
+- one_hot_seqs.npy - tensor of one-hot-encoded sequences of 100 ATAC-seq open chromatin regions (OCRs)
+- cell_type_array.npy - matrix of normalized ATAC-seq peak values for the same 100 OCRs
+- peak_names.npy - IDs of 100 OCRs in sample data
+- cell_type_names.npy - names of the 81 cell types in ATAC-seq dataset, in the same order as the data in cell_type_array.npy
+- filter_set99_index.txt - indices of 99 reproducible filters in the AI-TAC model
