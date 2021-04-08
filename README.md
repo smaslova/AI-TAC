@@ -6,7 +6,7 @@ AI-TAC is a deep convoluional network for predicting mouse immune cell ATAC-seq 
 
 
 ## Requirements
-The code was written in python v3.6.3 and pytorch v0.4.0, and run on NVIDIA P100 Pascal GPUs.
+The code was written in python v3.6.3 and pytorch v1.4.0, and run on NVIDIA P100 Pascal GPUs.
 
 ## Tutorial
 The required input is a bed file with ATAC-seq peak locations, the reference genome and a file with normalized peak heights.  The code for processing raw data is in data_processing/; for example, to convert the ImmGen mouse data set to one-hot encoded sequences and save in the data directory, run:
