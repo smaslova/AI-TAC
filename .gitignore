@@ -136,3 +136,5 @@ outputs/
 #bash scripts
 *.sh
 *.out
+
+.idea/
