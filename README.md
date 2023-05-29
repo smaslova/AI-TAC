@@ -12,7 +12,7 @@ The code was written in python v3.6.3 and pytorch v1.4.0, and run on NVIDIA P100
 
 The processed data files can be downloaded using the following links:
   - [bed file containing peak locations](https://www.dropbox.com/s/r8drj2wxc07bt4j/ImmGenATAC1219.peak_matched.txt?dl=0)
-  - [](https://www.dropbox.com/s/7mmd4v760eux755/mouse_peak_heights.csv?dl=0)
+  - [csv file containing measured ATAC-seq peak heights](https://www.dropbox.com/s/7mmd4v760eux755/mouse_peak_heights.csv?dl=0)
 
 The required input is a bed file with ATAC-seq peak locations, the reference genome and a file with normalized peak heights.  The code for processing raw data is in data_processing/; for example, to convert the ImmGen mouse data set to one-hot encoded sequences and save in the data directory, run:
 
